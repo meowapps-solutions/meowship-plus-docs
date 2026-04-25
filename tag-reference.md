@@ -41,6 +41,29 @@ flowchart LR
 ## FAQ
 
 <details>
+<summary><b>"What's the difference between `MSVN_PICKED` and `MSVN_INTRANSIT`?"</b></summary>
+
+They represent two distinct stages in a courier's workflow:
+
+- **`MSVN_PICKED`** = the driver has just collected the parcel from the sender. The parcel is in the driver's possession but has **not yet entered the courier's logistics pipeline**. This is a short-lived state.
+- **`MSVN_INTRANSIT`** = the parcel is **inside the courier's network**, moving toward the recipient. This covers everything from sorting at a hub, transport between hubs/cities, all the way through the final "out for delivery" leg.
+
+How the distinction plays out per courier type:
+
+| Courier type | `MSVN_PICKED` means | `MSVN_INTRANSIT` means |
+|---|---|---|
+| Multi-day network couriers<br/>(GHN, ViettelPost, GHTK) | Collected from sender, not yet at a sorting hub | At sorting hub, between hubs, or out for delivery — can last hours to days |
+| Same-day intra-city<br/>(Ahamove, GrabExpress) | Driver just picked up, about to head to drop-off | Driver actively en route to recipient — usually minutes |
+
+Why it matters to merchants:
+- `MSVN_PICKED` tells you the pickup is **complete** — useful for confirming the driver actually showed up.
+- `MSVN_INTRANSIT` tells you the parcel is **moving** — if an order stays on `MSVN_INTRANSIT` unusually long for a network courier (days across regions), that's normal; for same-day couriers (hours), it may indicate a problem.
+
+Note: Ahamove does not use `MSVN_INTRANSIT` at all — it jumps directly from `MSVN_PICKINGUP` to the terminal state (delivered / failed / etc.) because a single driver handles the whole trip within one city.
+
+</details>
+
+<details>
 <summary><b>"What's the difference between `MSVN_DELIVERY_FAILED`, `MSVN_RETURNING`, and `MSVN_RETURNED`?"</b></summary>
 
 These are three stages of the same flow:
@@ -80,8 +103,8 @@ You can't filter by delivery date using tags today. The delivery date is recorde
 | `MSVN_CONFIRMED` | Order confirmed, ready to ship | Admin clicks confirm / shipment cancelled and reset |
 | `MSVN_READY_FOR_PICKUP` | Courier has the shipment, waiting for a driver | Courier webhook |
 | `MSVN_PICKINGUP` | Driver is on the way / has been assigned | Courier webhook |
-| `MSVN_PICKED` | Driver has picked up the parcel | Courier webhook |
-| `MSVN_INTRANSIT` | Parcel is moving through the courier network / out for delivery | Courier webhook |
+| `MSVN_PICKED` | Driver has collected the parcel from the sender (not yet in the courier network) | Courier webhook |
+| `MSVN_INTRANSIT` | Parcel has entered the courier's network — sorting, inter-hub transport, or out for delivery | Courier webhook |
 | `MSVN_DELIVERED` | ✅ Successfully delivered to the recipient | Courier webhook |
 | `MSVN_DELIVERY_FAILED` | ❌ Delivery attempt failed | Courier webhook |
 | `MSVN_RETURNING` | Parcel is on the return leg back to the sender | Courier webhook |
